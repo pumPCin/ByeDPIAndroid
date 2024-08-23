@@ -35,6 +35,7 @@ fun createConnectionNotification(
     channelId: String,
     @StringRes title: Int,
     @StringRes content: Int,
+    @StringRes vpn_close: Int,
     service: Class<*>,
 ): Notification =
     NotificationCompat.Builder(context, channelId)
@@ -42,7 +43,7 @@ fun createConnectionNotification(
         .setSilent(true)
             .setContentTitle(context.getString(title))
             .setContentText(context.getString(content))
-            .addAction(0, R.string.vpn_stop,
+            .addAction(0, context.getString(vpn_close),
                 PendingIntent.getService(
                     context,
                     0,

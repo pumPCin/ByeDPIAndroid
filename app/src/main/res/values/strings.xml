@@ -5,6 +5,7 @@
     <string name="vpn_disconnect">Disconnect</string>
     <string name="vpn_connected">Connected</string>
     <string name="vpn_disconnected">Disconnected</string>
+    <string name="vpn_stop">Stop</string>
     <string name="proxy_up">Proxy is up</string>
     <string name="proxy_down">Proxy is down</string>
     <string name="proxy_start">Start</string>
@@ -38,6 +39,7 @@
     <string name="byedpi_tlsrec_at_sni_setting">Split TLS record at SNI</string>
     <string name="version">Version</string>
     <string name="source_code_link">Source code</string>
+    <string name="byedpi_readme">Documentation</string>
     <string name="byedpi_readme_link">What does all of this mean?</string>
     <string name="failed_to_start">Failed to start %1$s</string>
     <string name="vpn_channel_name">VPN</string>

@@ -42,7 +42,7 @@
         <SwitchPreference
             android:key="byedpi_enable_cmd_settings"
             android:title="@string/use_command_line_settings"
-            android:defaultValue="false" />
+            android:defaultValue="true" />
 
         <Preference
             android:key="byedpi_ui_settings"

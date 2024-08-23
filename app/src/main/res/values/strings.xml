@@ -53,7 +53,7 @@
     <string name="byedpi_hosts_blacklist_setting">Hosts blacklist</string>
     <string name="byedpi_hosts_mode_setting">Hosts</string>
     <string name="byedpi_hosts_whitelist_setting">Hosts whitelist</string>
-    <string name="byedpi_max_connections_setting">Maximum number of connections</string>
+    <string name="byedpi_max_connections_setting">Max connections</string>
     <string name="byedpi_no_domain_setting">No domain</string>
     <string name="byedpi_protocols_category">Protocols</string>
     <string name="byedpi_protocols_hint">Uncheck all to desync all traffic</string>

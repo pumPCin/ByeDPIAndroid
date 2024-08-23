@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <array name="themes">
-        <item name="system">System</item>
-        <item name="light">Light</item>
-        <item name="dark">Dark</item>
+        <item name="system">Системная</item>
+        <item name="light">Светлая</item>
+        <item name="dark">Тёмная</item>
     </array>
     <array name="themes_entries">
         <item name="system">system</item>

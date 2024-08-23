@@ -5,7 +5,7 @@
 
     <Preference
         android:key="byedpi_readme"
-        android:title="Documentation"
+        android:title="Документация"
         android:textColor="?attr/textFillColor"
         android:icon="@drawable/ic_github_36">
         <intent
@@ -20,6 +20,7 @@
             android:title="@string/command_line_arguments"
             android:dialogTitle="@string/command_line_arguments"
             android:inputType="textMultiLine"
+            android:defaultValue="-s 2 -M h,d -A torst -T 3 -f -1 -r 3+s -S"
             app:useSimpleSummaryProvider="true" />
 
     </androidx.preference.PreferenceCategory>

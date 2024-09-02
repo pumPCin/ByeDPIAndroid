@@ -51,8 +51,8 @@
     <!-- mod -->
     <array name="applist_types">
         <item name="disable">Нет</item>
-        <item name="blacklist">Черный список</item>
-        <item name="whitelist">Белый список</item>
+        <item name="blacklist">VPN кроме выбранных</item>
+        <item name="whitelist">VPN для выбранных</item>
     </array>
 
     <array name="applist_types_entries">

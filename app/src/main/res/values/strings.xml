@@ -89,6 +89,14 @@
     <string name="character_counter_overflowed_content_description">Превышено ограничение на количество символов (%1$d из %2$d)</string>
     <string name="character_counter_pattern">%1$d/%2$d</string>
     <string name="clear_text_end_icon_content_description">Очистить текст</string>
+    <string name="cmd_history_apply">Применить</string>
+    <string name="cmd_history_copy">Копировать</string>
+    <string name="cmd_history_delete">Удалить</string>
+    <string name="cmd_history_menu">Выберите действие</string>
+    <string name="cmd_history_pin">Закрепить</string>
+    <string name="cmd_history_pinned">Закреплено</string>
+    <string name="cmd_history_title">История Command line</string>
+    <string name="cmd_history_unpin">Открепить</string>
     <string name="command_line_arguments">Настройки Command line</string>
     <string name="command_line_editor">Command line редактор</string>
     <string name="copy">Копировать</string>

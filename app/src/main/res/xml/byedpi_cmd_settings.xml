@@ -4,8 +4,8 @@
     android:tag="byedpi_cmd_settings">
 
     <Preference
-        android:key="byedpi_readme"
         android:title="@string/byedpi_readme"
+        android:key="byedpi_readme"
         android:textColor="?attr/textFillColor"
         android:icon="@drawable/ic_github_36">
         <intent

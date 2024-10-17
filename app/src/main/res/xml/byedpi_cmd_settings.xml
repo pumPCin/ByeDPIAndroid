@@ -4,21 +4,20 @@
     android:tag="byedpi_cmd_settings">
 
     <Preference
-        android:title="@string/byedpi_readme"
         android:key="byedpi_readme"
+        android:title="@string/byedpi_readme"
         android:icon="@drawable/ic_github_36">
         <intent
             android:action="android.intent.action.VIEW"
             android:data="@string/byedpi_docs" />
     </Preference>
 
-        <com.takisoft.preferencex.EditTextPreference
-            android:key="byedpi_cmd_args"
-            android:title="@string/command_line_arguments"
-            android:dialogTitle="@string/command_line_arguments"
-            android:inputType="textMultiLine"
-            android:defaultValue="-s 2 -M h,d -A torst -T 3 -f -1 -r 3+s -S"
-            app:useSimpleSummaryProvider="true" />
+    <com.takisoft.preferencex.EditTextPreference
+        android:key="byedpi_cmd_args"
+        android:title="@string/command_line_arguments"
+        android:dialogTitle="@string/command_line_arguments"
+        android:inputType="textMultiLine"
+        app:useSimpleSummaryProvider="true" />
 
     <androidx.preference.PreferenceCategory
         android:key="cmd_history_category"

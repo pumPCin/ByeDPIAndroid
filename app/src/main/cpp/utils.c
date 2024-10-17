@@ -111,14 +111,6 @@ int parse_args(int argc, char **argv)
                     params.max_open = val;
                 break;
 
-            case 'L':
-                val = strtol(optarg, &end, 0);
-                if ((*end) || (val != 0 && val != 1))
-                    invalid = 1;
-                else
-                    params.auto_level = val;
-                break;
-
             case 'x': //
                 params.debug = strtol(optarg, 0, 0);
                 if (params.debug < 0)

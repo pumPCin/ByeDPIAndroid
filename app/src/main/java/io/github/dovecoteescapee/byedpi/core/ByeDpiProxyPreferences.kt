@@ -20,7 +20,7 @@ class ByeDpiProxyCmdPreferences(val args: Array<String>) : ByeDpiProxyPreference
     constructor(preferences: SharedPreferences) : this(
         preferences.getStringNotNull(
             "byedpi_cmd_args",
-            "-s 2 -M h,d -A torst -T 3 -f -1 -r 3+s -S"
+            ""
         )
     )
 

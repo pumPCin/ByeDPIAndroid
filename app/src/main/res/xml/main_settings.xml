@@ -44,7 +44,8 @@
 
         <Preference
             android:key="selected_apps"
-            android:title="@string/apps_select" />
+            android:title="@string/apps_select"
+            app:fragment="io.github.dovecoteescapee.byedpi.fragments.AppSelectionFragment" />
 
     </androidx.preference.PreferenceCategory>
 
@@ -85,12 +86,7 @@
         <Preference
             android:key="proxy_test"
             android:title="@string/title_test"
-            android:summary="@string/summary_test">
-            <intent
-                android:action="android.intent.action.VIEW"
-                android:targetPackage="io.github.dovecoteescapee.byedpi"
-                android:targetClass="io.github.dovecoteescapee.byedpi.activities.TestActivity" />
-        </Preference>
+            android:summary="@string/summary_test"/>
 
     </androidx.preference.PreferenceCategory>
 

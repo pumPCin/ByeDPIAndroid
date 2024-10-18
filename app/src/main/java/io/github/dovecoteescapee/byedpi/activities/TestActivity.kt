@@ -40,16 +40,14 @@ class TestActivity : AppCompatActivity() {
     private lateinit var sites: List<String>
     private lateinit var cmds: List<String>
 
-    private var isTesting = false
-    private lateinit var testJob: Job
-
     private lateinit var scrollTextView: ScrollView
     private lateinit var progressTextView: TextView
     private lateinit var resultsTextView: TextView
     private lateinit var startStopButton: Button
 
-    private var originalCmdArgs: String? = null
-
+    private var isTesting = false
+    private var originalCmdArgs: String = ""
+    private var testJob: Job? = null
     private val proxy = ByeDpiProxy()
     private var proxyJob: Job? = null
     private var proxyIp: String = "127.0.0.1"
@@ -64,7 +62,7 @@ class TestActivity : AppCompatActivity() {
         resultsTextView = findViewById(R.id.resultsTextView)
         progressTextView = findViewById(R.id.progressTextView)
 
-        originalCmdArgs = getPreferences().getString("byedpi_cmd_args", null)
+        originalCmdArgs = getPreferences().getString("byedpi_cmd_args", "").toString()
         resultsTextView.movementMethod = LinkMovementMethod.getInstance()
 
         sites = loadSitesFromFile().toMutableList()
@@ -189,18 +187,18 @@ class TestActivity : AppCompatActivity() {
         isTesting = false
         startStopButton.text = getString(R.string.test_start)
 
-        if (::testJob.isInitialized && testJob.isActive) {
-            testJob.cancel()
+        if (testJob?.isActive == true) {
+            testJob?.cancel()
+        }
+
+        if (originalCmdArgs.isNotEmpty()) {
+            updateCmdInPreferences(originalCmdArgs)
         }
 
         lifecycleScope.launch {
             if (isProxyRunning()) {
                 stopProxy()
             }
-        }
-
-        originalCmdArgs?.let {
-            updateCmdInPreferences(it)
         }
     }
 
@@ -366,12 +364,12 @@ class TestActivity : AppCompatActivity() {
     }
 
     private fun loadSitesFromFile(): List<String> {
-        val inputStream = assets.open("sites.txt")
+        val inputStream = assets.open("proxytest_sites.txt")
         return inputStream.bufferedReader().useLines { it.toList() }
     }
 
     private fun loadCmdsFromFile(): List<String> {
-        val inputStream = assets.open("cmds.txt")
+        val inputStream = assets.open("proxytest_cmds.txt")
         return inputStream.bufferedReader().useLines { it.toList() }
     }
 

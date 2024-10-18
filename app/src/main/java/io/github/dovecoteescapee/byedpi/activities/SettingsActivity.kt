@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.FragmentManager
 import io.github.dovecoteescapee.byedpi.R
 import io.github.dovecoteescapee.byedpi.fragments.MainSettingsFragment
@@ -34,7 +36,13 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         R.id.action_reset_settings -> {
-            getPreferences().edit().clear().apply()
+            val prefs = getPreferences()
+            val currentLanguage = prefs.getString("language", "system")
+            val editor = prefs.edit()
+
+            editor.clear()
+            editor.putString("language", currentLanguage)
+            editor.apply()
 
             supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
             supportFragmentManager

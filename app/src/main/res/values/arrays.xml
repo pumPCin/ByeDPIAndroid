@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <array name="languages_entries">
+        <item name="system">system</item>
+        <item name="ru">ru</item>
+        <item name="en">en</item>
+    </array>
+
     <array name="themes">
         <item name="system">Системная</item>
         <item name="light">Светлая</item>
@@ -38,14 +44,14 @@
     </array>
 
     <array name="byedpi_hosts_modes">
-        <item name="disable">Disable</item>
-        <item name="blacklist">Blacklist</item>
-        <item name="whitelist">Whitelist</item>
+        <item name="disable">Отключен</item>
+        <item name="blacklist">Чёрный список</item>
+        <item name="whitelist">Белый список</item>
     </array>
     <array name="byedpi_hosts_modes_entries">
-        <item name="disable">disable</item>
-        <item name="blacklist">blacklist</item>
-        <item name="whitelist">whitelist</item>
+        <item name="disable">Отключен</item>
+        <item name="blacklist">Чёрный список</item>
+        <item name="whitelist">Белый список</item>
     </array>
 
     <array name="applist_types">
@@ -53,10 +59,9 @@
         <item name="blacklist">VPN кроме выбранных</item>
         <item name="whitelist">VPN для выбранных</item>
     </array>
-
     <array name="applist_types_entries">
-        <item name="disable">disable</item>
-        <item name="blacklist">blacklist</item>
-        <item name="whitelist">whitelist</item>
+        <item name="disable">Отключен</item>
+        <item name="blacklist">Чёрный список</item>
+        <item name="whitelist">Белый список</item>
     </array>
 </resources>

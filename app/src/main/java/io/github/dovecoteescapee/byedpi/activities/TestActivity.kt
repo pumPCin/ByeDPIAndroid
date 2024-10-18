@@ -1,12 +1,21 @@
 package io.github.dovecoteescapee.byedpi.activities
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.widget.Button
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import io.github.dovecoteescapee.byedpi.R
@@ -34,6 +43,7 @@ class TestActivity : AppCompatActivity() {
     private var isTesting = false
     private lateinit var testJob: Job
 
+    private lateinit var scrollTextView: ScrollView
     private lateinit var progressTextView: TextView
     private lateinit var resultsTextView: TextView
     private lateinit var startStopButton: Button
@@ -49,9 +59,13 @@ class TestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_proxy_test)
 
+        scrollTextView = findViewById(R.id.scrollView)
         startStopButton = findViewById(R.id.startStopButton)
         resultsTextView = findViewById(R.id.resultsTextView)
         progressTextView = findViewById(R.id.progressTextView)
+
+        originalCmdArgs = getPreferences().getString("byedpi_cmd_args", null)
+        resultsTextView.movementMethod = LinkMovementMethod.getInstance()
 
         sites = loadSitesFromFile().toMutableList()
         cmds = loadCmdsFromFile()
@@ -61,23 +75,21 @@ class TestActivity : AppCompatActivity() {
 
             if (previousLogs.isNotEmpty()) {
                 progressTextView.text = getString(R.string.test_complete)
-                resultsTextView.text = previousLogs
+                resultsTextView.text = ""
+                displayLog(previousLogs)
             }
         }
 
         lifecycleScope.launch {
-            val domainGenerator = GoogleVideoUtils()
-            val autoGCS = domainGenerator.generateGoogleVideoDomain()
+            val googleVideoDomain = GoogleVideoUtils().generateGoogleVideoDomain()
 
-            if (autoGCS != null) {
-                (sites as MutableList<String>).add(autoGCS)
-                Log.i("TestActivity", "Added auto-generated Google domain: $autoGCS")
+            if (googleVideoDomain != null) {
+                (sites as MutableList<String>).add(googleVideoDomain)
+                Log.i("TestActivity", "Added auto-generated Google domain: $googleVideoDomain")
             } else {
                 Log.e("TestActivity", "Failed to generate Google domain")
             }
         }
-
-        originalCmdArgs = getPreferences().getString("byedpi_cmd_args", null)
 
         startStopButton.setOnClickListener {
             if (isTesting) {
@@ -108,32 +120,8 @@ class TestActivity : AppCompatActivity() {
         else -> super.onOptionsItemSelected(item)
     }
 
-    private fun updateCmdInPreferences(cmd: String) {
-        val sharedPreferences = getPreferences()
-        val editor = sharedPreferences.edit()
-        editor.putString("byedpi_cmd_args", cmd)
-        editor.apply()
-    }
-
-    private fun enableCmdInPreferences() {
-        val sharedPreferences = getPreferences()
-        val editor = sharedPreferences.edit()
-        editor.putBoolean("byedpi_enable_cmd_settings", true)
-        editor.apply()
-    }
-
     private fun getByeDpiPreferences(): ByeDpiProxyPreferences =
         ByeDpiProxyPreferences.fromSharedPreferences(getPreferences())
-
-    private fun loadSitesFromFile(): List<String> {
-        val inputStream = assets.open("sites.txt")
-        return inputStream.bufferedReader().useLines { it.toList() }
-    }
-
-    private fun loadCmdsFromFile(): List<String> {
-        val inputStream = assets.open("cmds.txt")
-        return inputStream.bufferedReader().useLines { it.toList() }
-    }
 
     private fun startTesting() {
         isTesting = true
@@ -142,7 +130,6 @@ class TestActivity : AppCompatActivity() {
         progressTextView.text = ""
 
         clearLogFile()
-        enableCmdInPreferences()
 
         testJob = lifecycleScope.launch {
             val successfulCmds = mutableListOf<Pair<String, Int>>()
@@ -150,7 +137,7 @@ class TestActivity : AppCompatActivity() {
 
             for (cmd in cmds) {
                 cmdIndex++
-                progressTextView.text = "${getString(R.string.test_process)} $cmdIndex/${cmds.size}"
+                progressTextView.text = getString(R.string.test_process, cmdIndex, cmds.size)
 
                 appendTextToResults("$cmd\n")
                 appendTextToResults("... ")
@@ -189,10 +176,11 @@ class TestActivity : AppCompatActivity() {
             appendTextToResults("${getString(R.string.test_good_cmds)}\n\n")
 
             for ((cmd, success) in successfulCmds) {
-                appendTextToResults("$cmd\n$success%\n\n")
+                appendLinkToResults("$cmd\n")
+                appendTextToResults("$success%\n\n")
             }
 
-            appendTextToResults("${getString(R.string.test_complete_info)}")
+            appendTextToResults(getString(R.string.test_complete_info))
             stopTesting()
         }
     }
@@ -217,14 +205,67 @@ class TestActivity : AppCompatActivity() {
     }
 
     private fun appendTextToResults(text: String) {
-        val scrollView = findViewById<ScrollView>(R.id.scrollView)
-
         resultsTextView.append(text)
-        saveLogToFile(text)
 
-        scrollView.post {
-            scrollView.fullScroll(ScrollView.FOCUS_DOWN)
+        if (isTesting) {
+            saveLogToFile(text)
         }
+
+        scrollToBottom()
+    }
+
+    private fun appendLinkToResults(text: String) {
+        val spannableString = SpannableString(text)
+        val options = arrayOf(
+            getString(R.string.cmd_history_apply),
+            getString(R.string.cmd_history_copy)
+        )
+
+        spannableString.setSpan(
+            object : ClickableSpan() {
+                override fun onClick(widget: View) {
+                    AlertDialog.Builder(this@TestActivity)
+                        .setTitle(getString(R.string.cmd_history_menu))
+                        .setItems(options) { _, which ->
+                            when (which) {
+                                0 -> updateCmdInPreferences(text.trim())
+                                1 -> copyToClipboard(text.trim())
+                            }
+                        }
+                        .show()
+                }
+            },
+            0,
+            text.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        resultsTextView.append(spannableString)
+
+        if (isTesting) {
+            saveLogToFile("{$text}")
+        }
+
+        scrollToBottom()
+    }
+
+    private fun scrollToBottom() {
+        scrollTextView.post {
+            scrollTextView.fullScroll(ScrollView.FOCUS_DOWN)
+        }
+    }
+
+    private fun updateCmdInPreferences(cmd: String) {
+        val sharedPreferences = getPreferences()
+        val editor = sharedPreferences.edit()
+        editor.putString("byedpi_cmd_args", cmd)
+        editor.apply()
+    }
+
+    private fun copyToClipboard(text: String) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("command", text)
+        clipboard.setPrimaryClip(clip)
     }
 
     private suspend fun checkSiteAccessibility(site: String): Boolean {
@@ -244,10 +285,10 @@ class TestActivity : AppCompatActivity() {
                 connection.readTimeout = 2000
 
                 val responseCode = connection.responseCode
-                Log.i("CheckSite", "Response $site: $responseCode")
+                Log.i("CheckSite", "Good response $site ($responseCode)")
                 true
             } catch (e: Exception) {
-                Log.e("CheckSite", "Error $site: proxy", e)
+                Log.e("CheckSite", "Error response $site")
                 false
             }
         }
@@ -324,6 +365,16 @@ class TestActivity : AppCompatActivity() {
         }
     }
 
+    private fun loadSitesFromFile(): List<String> {
+        val inputStream = assets.open("sites.txt")
+        return inputStream.bufferedReader().useLines { it.toList() }
+    }
+
+    private fun loadCmdsFromFile(): List<String> {
+        val inputStream = assets.open("cmds.txt")
+        return inputStream.bufferedReader().useLines { it.toList() }
+    }
+
     private fun saveLogToFile(log: String) {
         val file = File(filesDir, "proxy_test.log")
         file.appendText(log)
@@ -341,6 +392,16 @@ class TestActivity : AppCompatActivity() {
     private fun clearLogFile() {
         val file = File(filesDir, "proxy_test.log")
         file.writeText("")
+    }
+
+    private fun displayLog(log: String) {
+        log.split("{", "}").forEachIndexed { index, part ->
+            if (index % 2 == 0) {
+                appendTextToResults(part)
+            } else {
+                appendLinkToResults(part)
+            }
+        }
     }
 }
 

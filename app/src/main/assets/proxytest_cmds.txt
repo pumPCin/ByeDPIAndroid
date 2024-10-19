@@ -39,7 +39,6 @@
 --disoob 3+sni --split -1+host --tlsrec 1+sni
 --split 2 --fake 0+e --ttl 5 --tls-sni=www.google.com
 -s1 -q1 -Y -Ar -s5 -o1+s -At -f-1 -r1+s -As -s1 -o1+s -s-1 -An
--s1 -q1 -Y -Ar -s5 -o1+s -At -f-1 -r1+s -As -s1 -o1 +s -s-1 -An
 --split 1 --disorder 3+s --mod-http=h,d --auto=torst --tlsrec 1+s
 -s1 -q1 -Y -Ar -s5 -o25000+s -At -f-1 -r1+s -As -s1 -o1+s -s-1 -An -b+500
 --split 1 --disorder 3+s --mod-http=h,d --auto=torst --tlsrec 1+s --tlsrec 3+sni

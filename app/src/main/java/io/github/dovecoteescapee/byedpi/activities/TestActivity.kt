@@ -3,17 +3,20 @@ package io.github.dovecoteescapee.byedpi.activities
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -21,6 +24,9 @@ import androidx.lifecycle.lifecycleScope
 import io.github.dovecoteescapee.byedpi.R
 import io.github.dovecoteescapee.byedpi.core.ByeDpiProxy
 import io.github.dovecoteescapee.byedpi.core.ByeDpiProxyPreferences
+import io.github.dovecoteescapee.byedpi.data.AppStatus
+import io.github.dovecoteescapee.byedpi.fragments.MainSettingsFragment
+import io.github.dovecoteescapee.byedpi.fragments.ProxyTestSettingsFragment
 import io.github.dovecoteescapee.byedpi.utility.GoogleVideoUtils
 import io.github.dovecoteescapee.byedpi.utility.getPreferences
 import kotlinx.coroutines.Dispatchers
@@ -65,27 +71,13 @@ class TestActivity : AppCompatActivity() {
         originalCmdArgs = getPreferences().getString("byedpi_cmd_args", "").toString()
         resultsTextView.movementMethod = LinkMovementMethod.getInstance()
 
-        sites = loadSitesFromFile().toMutableList()
-        cmds = loadCmdsFromFile()
-
         lifecycleScope.launch {
-            val previousLogs = loadLogFromFile()
+            val previousLogs = loadLog()
 
             if (previousLogs.isNotEmpty()) {
                 progressTextView.text = getString(R.string.test_complete)
                 resultsTextView.text = ""
                 displayLog(previousLogs)
-            }
-        }
-
-        lifecycleScope.launch {
-            val googleVideoDomain = GoogleVideoUtils().generateGoogleVideoDomain()
-
-            if (googleVideoDomain != null) {
-                (sites as MutableList<String>).add(googleVideoDomain)
-                Log.i("TestActivity", "Added auto-generated Google domain: $googleVideoDomain")
-            } else {
-                Log.e("TestActivity", "Failed to generate Google domain")
             }
         }
 
@@ -109,13 +101,29 @@ class TestActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
-        android.R.id.home -> {
-            onBackPressedDispatcher.onBackPressed()
-            true
-        }
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_test, menu)
+        return true
+    }
 
-        else -> super.onOptionsItemSelected(item)
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                if (!isTesting) {
+                    val intent = Intent(this, TestSettingsActivity::class.java)
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(this, R.string.settings_unavailable, Toast.LENGTH_SHORT)
+                        .show()
+                }
+                true
+            }
+            android.R.id.home -> {
+                onBackPressedDispatcher.onBackPressed()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun getByeDpiPreferences(): ByeDpiProxyPreferences =
@@ -127,18 +135,37 @@ class TestActivity : AppCompatActivity() {
         resultsTextView.text = ""
         progressTextView.text = ""
 
-        clearLogFile()
+        sites = loadSites().toMutableList()
+        cmds = loadCmds()
+        clearLog()
 
         testJob = lifecycleScope.launch {
             val successfulCmds = mutableListOf<Pair<String, Int>>()
+            val gdomain = getPreferences().getBoolean("byedpi_proxytest_gdomain", true)
+            val fullLog = getPreferences().getBoolean("byedpi_proxytest_fulllog", false)
+            val logClickable = getPreferences().getBoolean("byedpi_proxytest_logclickable", false)
             var cmdIndex = 0
+
+            if (gdomain) {
+                val googleVideoDomain = GoogleVideoUtils().generateGoogleVideoDomain()
+                if (googleVideoDomain != null) {
+                    (sites as MutableList<String>).add(googleVideoDomain)
+                    appendTextToResults("--- $googleVideoDomain ---\n\n")
+                    Log.i("TestActivity", "Added auto-generated Google domain: $googleVideoDomain")
+                } else {
+                    Log.e("TestActivity", "Failed to generate Google domain")
+                }
+            }
 
             for (cmd in cmds) {
                 cmdIndex++
                 progressTextView.text = getString(R.string.test_process, cmdIndex, cmds.size)
 
-                appendTextToResults("$cmd\n")
-                appendTextToResults("... ")
+                if (logClickable) {
+                    appendLinkToResults("$cmd\n")
+                } else {
+                    appendTextToResults("$cmd\n")
+                }
 
                 try {
                     startProxyWithCmd("--ip $proxyIp --port $proxyPort $cmd")
@@ -151,6 +178,10 @@ class TestActivity : AppCompatActivity() {
                 val checkResults = sites.map { site ->
                     async {
                         val isAccessible = checkSiteAccessibility(site)
+                        if (fullLog) {
+                            val accessibilityStatus = if (isAccessible) "ok" else "error"
+                            appendTextToResults("$site - $accessibilityStatus\n")
+                        }
                         isAccessible
                     }
                 }
@@ -206,7 +237,7 @@ class TestActivity : AppCompatActivity() {
         resultsTextView.append(text)
 
         if (isTesting) {
-            saveLogToFile(text)
+            saveLog(text)
         }
 
         scrollToBottom()
@@ -241,7 +272,7 @@ class TestActivity : AppCompatActivity() {
         resultsTextView.append(spannableString)
 
         if (isTesting) {
-            saveLogToFile("{$text}")
+            saveLog("{$text}")
         }
 
         scrollToBottom()
@@ -363,22 +394,34 @@ class TestActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadSitesFromFile(): List<String> {
-        val inputStream = assets.open("proxytest_sites.txt")
-        return inputStream.bufferedReader().useLines { it.toList() }
+    private fun loadSites(): List<String> {
+        val userDomains = getPreferences().getBoolean("byedpi_proxytest_userdomains", false)
+        return if (userDomains) {
+            val domains = getPreferences().getString("byedpi_proxytest_domains", "")
+            domains?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        } else {
+            val inputStream = assets.open("proxytest_sites.txt")
+            inputStream.bufferedReader().useLines { it.toList() }
+        }
     }
 
-    private fun loadCmdsFromFile(): List<String> {
-        val inputStream = assets.open("proxytest_cmds.txt")
-        return inputStream.bufferedReader().useLines { it.toList() }
+    private fun loadCmds(): List<String> {
+        val userCommands = getPreferences().getBoolean("byedpi_proxytest_usercommands", false)
+        return if (userCommands) {
+            val commands = getPreferences().getString("byedpi_proxytest_commands", "")
+            commands?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        } else {
+            val inputStream = assets.open("proxytest_cmds.txt")
+            inputStream.bufferedReader().useLines { it.toList() }
+        }
     }
 
-    private fun saveLogToFile(log: String) {
+    private fun saveLog(log: String) {
         val file = File(filesDir, "proxy_test.log")
         file.appendText(log)
     }
 
-    private fun loadLogFromFile(): String {
+    private fun loadLog(): String {
         val file = File(filesDir, "proxy_test.log")
         return if (file.exists()) {
             file.readText()
@@ -387,7 +430,7 @@ class TestActivity : AppCompatActivity() {
         }
     }
 
-    private fun clearLogFile() {
+    private fun clearLog() {
         val file = File(filesDir, "proxy_test.log")
         file.writeText("")
     }

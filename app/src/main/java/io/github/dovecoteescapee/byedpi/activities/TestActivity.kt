@@ -33,7 +33,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -56,7 +55,7 @@ class TestActivity : AppCompatActivity() {
     private var originalCmdArgs: String = ""
     private var testJob: Job? = null
     private var proxyIp: String = "127.0.0.1"
-    private var proxyPort: Int = 1090
+    private var proxyPort: Int = 1080
     private val httpClient = createHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -127,11 +126,19 @@ class TestActivity : AppCompatActivity() {
     }
 
     private fun startProxyService() {
-        ServiceManager.start(this, Mode.Proxy)
+        try {
+            ServiceManager.start(this, Mode.Proxy)
+        } catch (e: Exception) {
+            Log.e("TestActivity", "Error start proxy service: ${e.message}")
+        }
     }
 
     private fun stopProxyService() {
-        ServiceManager.stop(this)
+        try {
+            ServiceManager.stop(this)
+        } catch (e: Exception) {
+            Log.e("TestActivity", "Error stop proxy service: ${e.message}")
+        }
     }
 
     private suspend fun waitForProxyToStart(timeout: Long = 5000): Boolean {
@@ -212,23 +219,8 @@ class TestActivity : AppCompatActivity() {
                     appendTextToResults("$cmd\n")
                 }
 
-                val checkResults = sites.map { site ->
-                    async {
-                        if (!isProxyRunning()) return@async false
-
-                        val isAccessible = checkSiteAccessibility(site)
-                        if (fullLog) {
-                            val accessibilityStatus = if (isAccessible) "ok" else "error"
-                            appendTextToResults("$site - $accessibilityStatus\n")
-                        }
-
-                        isAccessible
-                    }
-                }
-
-                val results = checkResults.awaitAll()
-
-                val successfulCount = results.count { it }
+                val checkResults = checkSitesAsync(sites, fullLog)
+                val successfulCount = checkResults.count { it.second }
                 val successPercentage = (successfulCount * 100) / sites.size
 
                 if (successPercentage >= 50) {
@@ -237,7 +229,6 @@ class TestActivity : AppCompatActivity() {
 
                 appendTextToResults("$successfulCount/${sites.size} ($successPercentage%)\n\n")
 
-                delay(500)
                 stopProxyService()
                 waitForProxyToStop()
             }
@@ -343,6 +334,21 @@ class TestActivity : AppCompatActivity() {
             .readTimeout(2, TimeUnit.SECONDS)
             .writeTimeout(2, TimeUnit.SECONDS)
             .build()
+    }
+
+    private suspend fun checkSitesAsync(sites: List<String>, fullLog: Boolean): List<Pair<String, Boolean>> {
+        return sites.map { site ->
+            lifecycleScope.async {
+                val result = checkSiteAccessibility(site)
+
+                if (fullLog) {
+                    val accessibilityStatus = if (result) "ok" else "error"
+                    appendTextToResults("$site - $accessibilityStatus\n")
+                }
+
+                Pair(site, result)
+            }
+        }.awaitAll()
     }
 
     private suspend fun checkSiteAccessibility(site: String): Boolean {

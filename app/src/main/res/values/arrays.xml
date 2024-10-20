@@ -38,7 +38,7 @@
     </array>
 
     <array name="byedpi_hosts_modes">
-        <item name="disable">Отключен</item>
+        <item name="disable">Нет</item>
         <item name="blacklist">Чёрный список</item>
         <item name="whitelist">Белый список</item>
     </array>
